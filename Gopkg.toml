@@ -1,11 +1,4 @@
 ignored = [
-    "github.com/mholt/caddy",
-    "github.com/mholt/caddy/caddyfile",
-    "github.com/mholt/caddy/startupshutdown",
-    "github.com/mholt/caddy/onevent",
-    "github.com/miekg/dns",
-    "github.com/prometheus/client_golang/prometheus",
-    "github.com/prometheus/client_golang/prometheus/promhttp",
 ]
 
 # client-go 6.0.0 uses apimachinery 180eddb345a5be3a157cea1c624700ad5bd27b8f
