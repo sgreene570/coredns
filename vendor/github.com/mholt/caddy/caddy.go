@@ -41,12 +41,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/mholt/caddy/caddyfile"
 	"github.com/mholt/caddy/telemetry"
-	"github.com/mholt/certmagic"
 )
 
 // Configurable application parameters
@@ -110,12 +108,12 @@ type Instance struct {
 	servers []ServerListener
 
 	// these callbacks execute when certain events occur
-	OnFirstStartup  []func() error // starting, not as part of a restart
-	OnStartup       []func() error // starting, even as part of a restart
-	OnRestart       []func() error // before restart commences
-	OnRestartFailed []func() error // if restart failed
-	OnShutdown      []func() error // stopping, even as part of a restart
-	OnFinalShutdown []func() error // stopping, not as part of a restart
+	onFirstStartup  []func() error // starting, not as part of a restart
+	onStartup       []func() error // starting, even as part of a restart
+	onRestart       []func() error // before restart commences
+	onRestartFailed []func() error // if restart failed
+	onShutdown      []func() error // stopping, even as part of a restart
+	onFinalShutdown []func() error // stopping, not as part of a restart
 
 	// storing values on an instance is preferable to
 	// global state because these will get garbage-
@@ -165,13 +163,13 @@ func (i *Instance) Stop() error {
 // the rest. All the non-nil errors will be returned.
 func (i *Instance) ShutdownCallbacks() []error {
 	var errs []error
-	for _, shutdownFunc := range i.OnShutdown {
+	for _, shutdownFunc := range i.onShutdown {
 		err := shutdownFunc()
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
-	for _, finalShutdownFunc := range i.OnFinalShutdown {
+	for _, finalShutdownFunc := range i.onFinalShutdown {
 		err := finalShutdownFunc()
 		if err != nil {
 			errs = append(errs, err)
@@ -194,23 +192,20 @@ func (i *Instance) Restart(newCaddyfile Input) (*Instance, error) {
 	defer func() {
 		r := recover()
 		if err != nil || r != nil {
-			for _, fn := range i.OnRestartFailed {
-				err2 := fn()
-				if err2 != nil {
-					log.Printf("[ERROR] Restart failed callback returned error: %v", err2)
+			for _, fn := range i.onRestartFailed {
+				err = fn()
+				if err != nil {
+					log.Printf("[ERROR] restart failed: %v", err)
 				}
 			}
-			if err != nil {
-				log.Printf("[ERROR] Restart failed: %v", err)
-			}
 			if r != nil {
-				log.Printf("[PANIC] Restart: %v", r)
+				panic(r)
 			}
 		}
 	}()
 
 	// run restart callbacks
-	for _, fn := range i.OnRestart {
+	for _, fn := range i.onRestart {
 		err = fn()
 		if err != nil {
 			return i, err
@@ -249,7 +244,7 @@ func (i *Instance) Restart(newCaddyfile Input) (*Instance, error) {
 	// attempt to start new instance
 	err = startWithListenerFds(newCaddyfile, newInst, restartFds)
 	if err != nil {
-		return i, fmt.Errorf("starting with listener file descriptors: %v", err)
+		return i, err
 	}
 
 	// success! stop the old instance
@@ -257,7 +252,7 @@ func (i *Instance) Restart(newCaddyfile Input) (*Instance, error) {
 	if err != nil {
 		return i, err
 	}
-	for _, shutdownFunc := range i.OnShutdown {
+	for _, shutdownFunc := range i.onShutdown {
 		err = shutdownFunc()
 		if err != nil {
 			return i, err
@@ -277,6 +272,42 @@ func (i *Instance) Restart(newCaddyfile Input) (*Instance, error) {
 // saved servers, graceful restarts will be provided.
 func (i *Instance) SaveServer(s Server, ln net.Listener) {
 	i.servers = append(i.servers, ServerListener{server: s, listener: ln})
+}
+
+// HasListenerWithAddress returns whether this package is
+// tracking a server using a listener with the address
+// addr.
+func HasListenerWithAddress(addr string) bool {
+	instancesMu.Lock()
+	defer instancesMu.Unlock()
+	for _, inst := range instances {
+		for _, sln := range inst.servers {
+			if listenerAddrEqual(sln.listener, addr) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// listenerAddrEqual compares a listener's address with
+// addr. Extra care is taken to match addresses with an
+// empty hostname portion, as listeners tend to report
+// [::]:80, for example, when the matching address that
+// created the listener might be simply :80.
+func listenerAddrEqual(ln net.Listener, addr string) bool {
+	lnAddr := ln.Addr().String()
+	hostname, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return lnAddr == addr
+	}
+	if lnAddr == net.JoinHostPort("::", port) {
+		return true
+	}
+	if lnAddr == net.JoinHostPort("0.0.0.0", port) {
+		return true
+	}
+	return hostname != "" && lnAddr == addr
 }
 
 // TCPServer is a type that can listen and serve connections.
@@ -357,11 +388,6 @@ type GracefulServer interface {
 	// address; you must store the address the
 	// server is to serve on some other way.
 	Address() string
-
-	// WrapListener wraps a listener with the
-	// listener middlewares configured for this
-	// server, if any.
-	WrapListener(net.Listener) net.Listener
 }
 
 // Listener is a net.Listener with an underlying file descriptor.
@@ -472,26 +498,6 @@ func (i *Instance) Caddyfile() Input {
 //
 // This function blocks until all the servers are listening.
 func Start(cdyfile Input) (*Instance, error) {
-	// set up the clustering plugin, if there is one (and there should
-	// always be one) -- this should be done exactly once, but we can't
-	// do it during init while plugins are still registering, so do it
-	// when starting the first instance)
-	if atomic.CompareAndSwapInt32(&clusterPluginSetup, 0, 1) {
-		clusterPluginName := os.Getenv("CADDY_CLUSTERING")
-		if clusterPluginName == "" {
-			clusterPluginName = "file" // name of default storage plugin as registered in caddytls package
-		}
-		clusterFn, ok := clusterProviders[clusterPluginName]
-		if !ok {
-			return nil, fmt.Errorf("unrecognized cluster plugin (was it included in the Caddy build?): %s", clusterPluginName)
-		}
-		storage, err := clusterFn()
-		if err != nil {
-			return nil, fmt.Errorf("constructing cluster plugin %s: %v", clusterPluginName, err)
-		}
-		certmagic.DefaultStorage = storage
-	}
-
 	inst := &Instance{serverType: cdyfile.ServerType(), wg: new(sync.WaitGroup), Storage: make(map[interface{}]interface{})}
 	err := startWithListenerFds(cdyfile, inst, nil)
 	if err != nil {
@@ -501,10 +507,6 @@ func Start(cdyfile Input) (*Instance, error) {
 	if pidErr := writePidFile(); pidErr != nil {
 		log.Printf("[ERROR] Could not write pidfile: %v", pidErr)
 	}
-
-	// Execute instantiation events
-	EmitEvent(InstanceStartupEvent, inst)
-
 	return inst, nil
 }
 
@@ -549,14 +551,14 @@ func startWithListenerFds(cdyfile Input, inst *Instance, restartFds map[string]r
 	// run startup callbacks
 	if !IsUpgrade() && restartFds == nil {
 		// first startup means not a restart or upgrade
-		for _, firstStartupFunc := range inst.OnFirstStartup {
+		for _, firstStartupFunc := range inst.onFirstStartup {
 			err = firstStartupFunc()
 			if err != nil {
 				return err
 			}
 		}
 	}
-	for _, startupFunc := range inst.OnStartup {
+	for _, startupFunc := range inst.onStartup {
 		err = startupFunc()
 		if err != nil {
 			return err
@@ -724,25 +726,24 @@ func startServers(serverList []Server, inst *Instance, restartFds map[string]res
 					file := os.NewFile(fdIndex, "")
 					ln, err = net.FileListener(file)
 					if err != nil {
-						return fmt.Errorf("making listener from file: %v", err)
+						return err
 					}
 					err = file.Close()
 					if err != nil {
-						return fmt.Errorf("closing copy of listener file: %v", err)
+						return err
 					}
 				}
 				if fdIndex, ok := loadedGob.ListenerFds["udp"+addr]; ok {
 					file := os.NewFile(fdIndex, "")
 					pc, err = net.FilePacketConn(file)
 					if err != nil {
-						return fmt.Errorf("making packet connection from file: %v", err)
+						return err
 					}
 					err = file.Close()
 					if err != nil {
-						return fmt.Errorf("closing copy of packet connection file: %v", err)
+						return err
 					}
 				}
-				ln = gs.WrapListener(ln)
 			}
 		}
 
@@ -755,46 +756,45 @@ func startServers(serverList []Server, inst *Instance, restartFds map[string]res
 				if old.listener != nil {
 					file, err := old.listener.File()
 					if err != nil {
-						return fmt.Errorf("getting old listener file: %v", err)
+						return err
 					}
 					ln, err = net.FileListener(file)
 					if err != nil {
-						return fmt.Errorf("getting file listener: %v", err)
+						return err
 					}
 					err = file.Close()
 					if err != nil {
-						return fmt.Errorf("closing copy of listener file: %v", err)
+						return err
 					}
 				}
 				// packetconn
 				if old.packet != nil {
 					file, err := old.packet.File()
 					if err != nil {
-						return fmt.Errorf("getting old packet file: %v", err)
+						return err
 					}
 					pc, err = net.FilePacketConn(file)
 					if err != nil {
-						return fmt.Errorf("getting file packet connection: %v", err)
+						return err
 					}
 					err = file.Close()
 					if err != nil {
-						return fmt.Errorf("close copy of packet file: %v", err)
+						return err
 					}
 				}
-				ln = gs.WrapListener(ln)
 			}
 		}
 
 		if ln == nil {
 			ln, err = s.Listen()
 			if err != nil {
-				return fmt.Errorf("Listen: %v", err)
+				return err
 			}
 		}
 		if pc == nil {
 			pc, err = s.ListenPacket()
 			if err != nil {
-				return fmt.Errorf("ListenPacket: %v", err)
+				return err
 			}
 		}
 
@@ -1020,8 +1020,6 @@ var (
 	// by default if no other file is specified.
 	DefaultConfigFile = "Caddyfile"
 )
-
-var clusterPluginSetup int32 // access atomically
 
 // CtxKey is a value type for use with context.WithValue.
 type CtxKey string

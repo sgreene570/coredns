@@ -391,7 +391,7 @@ var (
 	// If the value is true, it may be removed if
 	// the metric is re-enabled remotely later. If
 	// the value is false, it is permanent
-	// (presumably because the user explicitly
+	// (presumably becaues the user explicitly
 	// disabled it) and can only be re-enabled
 	// with user consent.
 	disabledMetrics   = make(map[string]bool)

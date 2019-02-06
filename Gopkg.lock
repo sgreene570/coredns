@@ -319,14 +319,6 @@
   version = "1.1.4"
 
 [[projects]]
-  digest = "1:f44ca3e400a23dc9cf76a09d71891da95193c0c7da2008205f8f20154f49b22d"
-  name = "github.com/klauspost/cpuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "e7e905edc00ea8827e58662220139109efea09db"
-  version = "v1.2.0"
-
-[[projects]]
   branch = "master"
   digest = "1:f91bb67d051a94cf6ab2cf07eee0550432afc31655838d42cdec258db4b348f0"
   name = "github.com/kr/logfmt"
@@ -343,7 +335,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:a0fa86e7ac07a6d8d9cef59b3e0127eb05534b2ff1fb539f81d5861453948d9a"
+  digest = "1:90141f31eef85be14e7805d5d099ec1059ba1c0e7d6322f8010c27bed515f4df"
   name = "github.com/mholt/caddy"
   packages = [
     ".",
@@ -353,24 +345,16 @@
     "telemetry",
   ]
   pruneopts = "NUT"
-  revision = "2ea544e9a03288118b4557d400dbc64031ae0198"
-  version = "v0.11.3"
+  revision = "6f580c6aa36c54c3e1c65b5c609550a8a2508e3e"
+  version = "v0.11.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0f250927ae9d53262bc868013e8b40c7af0e58eec20479f4060d85c856c08574"
-  name = "github.com/mholt/certmagic"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f92e85346d81334853749f5ce4434b48c4c2ed25"
-
-[[projects]]
-  digest = "1:9747dd1fd2a355a86f3a7499f8d39102843e6f04281c825b30eb011e8ccefc98"
+  digest = "1:ba69b8ccc110f032a0a92edd99b99d920b504f8e2a05d505c35b0de1e52f50e8"
   name = "github.com/miekg/dns"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "8fc2e5773bbd308ca2fcc962fd8d25c1bd0f6743"
-  version = "v1.1.4"
+  revision = "56be65265e34e731425e0269a301774938827c60"
+  version = "v1.1.3"
 
 [[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
@@ -452,7 +436,7 @@
   version = "v2.0.3"
 
 [[projects]]
-  digest = "1:7c7cfeecd2b7147bcfec48a4bf622b4879e26aec145a9e373ce51d0c23b16f6b"
+  digest = "1:a8512715947d49f24e6aa2d0fdd06f46bdd8d2e792517ba0ac95a2c089eaae28"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -460,8 +444,8 @@
     "prometheus/promhttp",
   ]
   pruneopts = "NUT"
-  revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
-  version = "v0.9.2"
+  revision = "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
+  version = "v0.9.1"
 
 [[projects]]
   branch = "master"
@@ -520,39 +504,12 @@
   revision = "9c7f9b7a2bc3a520f7c7b30b34b7f85f47fe27b6"
 
 [[projects]]
-  digest = "1:fad7d0fc05962f8612ad05e56f1c37386109e758e8ff7f942fe60bf8e4dbba7d"
-  name = "github.com/xenolf/lego"
-  packages = [
-    "acme",
-    "acme/api",
-    "acme/api/internal/nonces",
-    "acme/api/internal/secure",
-    "acme/api/internal/sender",
-    "certcrypto",
-    "certificate",
-    "challenge",
-    "challenge/dns01",
-    "challenge/http01",
-    "challenge/resolver",
-    "challenge/tlsalpn01",
-    "lego",
-    "log",
-    "platform/wait",
-    "registration",
-  ]
-  pruneopts = "NUT"
-  revision = "00ad82dec10ad0af1e037ee652ad1f1cc7015178"
-  version = "v2.1.0"
-
-[[projects]]
   branch = "master"
-  digest = "1:1683f109d69f4a055621eeb7f396d37121c1d2a259b3a77030c3ce5a1b8c92e9"
+  digest = "1:583f2f436bab7b59a7bd3e759f1375b06f460760ed1f9235604d143eaab83009"
   name = "golang.org/x/crypto"
   packages = [
     "ed25519",
     "ed25519/internal/edwards25519",
-    "ocsp",
-    "pbkdf2",
     "ssh/terminal",
   ]
   pruneopts = "NUT"
@@ -705,18 +662,6 @@
   pruneopts = "NUT"
   revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
   version = "v0.9.1"
-
-[[projects]]
-  digest = "1:b36ebe2478bf5da49c27d8c49d75d1d5cc7fdbd6be1ab464916f9c3a3e3228a4"
-  name = "gopkg.in/square/go-jose.v2"
-  packages = [
-    ".",
-    "cipher",
-    "json",
-  ]
-  pruneopts = "NUT"
-  revision = "e94fb177d3668d35ab39c61cbb2f311550557e83"
-  version = "v2.2.2"
 
 [[projects]]
   digest = "1:7c95b35057a0ff2e19f707173cc1a947fa43a6eb5c4d300d196ece0334046082"

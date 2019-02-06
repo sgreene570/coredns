@@ -42,13 +42,11 @@ import (
 )
 
 var goos, goarch, goarm string
-var race bool
 
 func init() {
 	flag.StringVar(&goos, "goos", "", "GOOS for which to build")
 	flag.StringVar(&goarch, "goarch", "", "GOARCH for which to build")
 	flag.StringVar(&goarm, "goarm", "", "GOARM for which to build")
-	flag.BoolVar(&race, "race", false, "Enable race detector")
 }
 
 func main() {
@@ -69,9 +67,6 @@ func main() {
 	args := []string{"build", "-ldflags", ldflags}
 	args = append(args, "-asmflags", fmt.Sprintf("-trimpath=%s", gopath))
 	args = append(args, "-gcflags", fmt.Sprintf("-trimpath=%s", gopath))
-	if race {
-		args = append(args, "-race")
-	}
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -82,9 +77,6 @@ func main() {
 		"GOARCH=" + goarch,
 		"GOARM=" + goarm,
 	} {
-		if race && env == "CGO_ENABLED=0" {
-			continue
-		}
 		cmd.Env = append(cmd.Env, env)
 	}
 
