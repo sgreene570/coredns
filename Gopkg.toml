@@ -6,26 +6,18 @@ ignored = [
   non-go = true
   unused-packages = true
 
-# client-go v10.0.0 uses apimachinery 2b1284ed4c93a43499e781493253e2ac5959c4fd
-# and api 89a74a8d264df0e993299876a8cde88379b940ee,
-# and introduced klog 8139d8cb77af419532b33dfa7dd09fbc5f1d344f
-# and yaml fd68e9863619f6ec2fdd8625fe1f02e7c877e480 (see Godep.json).
-# go dep is unable to match Godep.json automatically so have to specify here.
+# client-go 7.0.0 uses apimachinery 302974c03f7e50f16561ba237db776ab93594ef6
+# and api 73d903622b7391f3312dcbac6483fed484e185f8 (see Godep.json). go dep
+# is unable to match Godep.json automatically so have to specify here.
 [[constraint]]
     name = "k8s.io/client-go"
-    version = "v10.0.0"
+    version = "v7.0.0"
 [[override]]
     name = "k8s.io/apimachinery"
-    revision = "2b1284ed4c93a43499e781493253e2ac5959c4fd"
+    revision = "302974c03f7e50f16561ba237db776ab93594ef6"
 [[override]]
     name = "k8s.io/api"
-    revision = "89a74a8d264df0e993299876a8cde88379b940ee"
-[[override]]
-    name = "k8s.io/klog"
-    revision = "8139d8cb77af419532b33dfa7dd09fbc5f1d344f"
-[[override]]
-    name = "sigs.k8s.io/yaml"
-    revision = "fd68e9863619f6ec2fdd8625fe1f02e7c877e480"
+    revision = "73d903622b7391f3312dcbac6483fed484e185f8"
 
 # Pin these dependencies to the exact versions listed in the
 # Makefile. We can't even allow the patch version to float as that
