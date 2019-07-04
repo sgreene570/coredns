@@ -4,7 +4,6 @@ package trace
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -12,11 +11,13 @@ import (
 	"github.com/coredns/coredns/plugin/metrics"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/pkg/rcode"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+
 	// Plugin the trace package.
 	_ "github.com/coredns/coredns/plugin/pkg/trace"
 	"github.com/coredns/coredns/request"
 
-	ddtrace "github.com/DataDog/dd-trace-go/opentracing"
 	"github.com/miekg/dns"
 	ot "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
@@ -53,7 +54,8 @@ func (t *trace) OnStartup() error {
 		case "zipkin":
 			err = t.setupZipkin()
 		case "datadog":
-			err = t.setupDatadog()
+			tracer := opentracer.New(tracer.WithAgentAddr(t.Endpoint), tracer.WithServiceName(t.serviceName), tracer.WithDebugMode(true))
+			t.tracer = tracer
 		default:
 			err = fmt.Errorf("unknown endpoint type: %s", t.EndpointType)
 		}
@@ -71,22 +73,6 @@ func (t *trace) setupZipkin() error {
 	recorder := zipkin.NewRecorder(collector, false, t.serviceEndpoint, t.serviceName)
 	t.tracer, err = zipkin.NewTracer(recorder, zipkin.ClientServerSameSpan(t.clientServer))
 
-	return err
-}
-
-func (t *trace) setupDatadog() error {
-	config := ddtrace.NewConfiguration()
-	config.ServiceName = t.serviceName
-
-	host := strings.Split(t.Endpoint, ":")
-	config.AgentHostname = host[0]
-
-	if len(host) == 2 {
-		config.AgentPort = host[1]
-	}
-
-	tracer, _, err := ddtrace.NewTracer(config)
-	t.tracer = tracer
 	return err
 }
 

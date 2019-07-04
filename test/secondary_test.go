@@ -2,10 +2,9 @@ package test
 
 import (
 	"testing"
+	"time"
 
-	"github.com/coredns/coredns/plugin/proxy"
 	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
@@ -25,10 +24,9 @@ func TestEmptySecondaryZone(t *testing.T) {
 	}
 	defer i.Stop()
 
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "www.example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("www.example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}
@@ -72,12 +70,16 @@ func TestSecondaryZoneTransfer(t *testing.T) {
 	m := new(dns.Msg)
 	m.SetQuestion("example.org.", dns.TypeSOA)
 
-	r, err := dns.Exchange(m, udp)
-	if err != nil {
-		t.Fatalf("Expected to receive reply, but didn't: %s", err)
+	var r *dns.Msg
+	// This is now async; we we need to wait for it to be transfered.
+	for i := 0; i < 10; i++ {
+		r, _ = dns.Exchange(m, udp)
+		if len(r.Answer) == 0 {
+			break
+		}
+		time.Sleep(100 * time.Microsecond)
 	}
-
-	if len(r.Answer) == 0 {
+	if len(r.Answer) != 0 {
 		t.Fatalf("Expected answer section")
 	}
 }
