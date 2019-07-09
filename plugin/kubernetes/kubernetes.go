@@ -2,19 +2,17 @@
 package kubernetes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes/object"
 	"github.com/coredns/coredns/plugin/pkg/dnsutil"
 	"github.com/coredns/coredns/plugin/pkg/fall"
-	"github.com/coredns/coredns/plugin/pkg/healthcheck"
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 	"github.com/coredns/coredns/request"
 
@@ -32,9 +30,8 @@ import (
 type Kubernetes struct {
 	Next             plugin.Handler
 	Zones            []string
-	Upstream         upstream.Upstream
+	Upstream         *upstream.Upstream
 	APIServerList    []string
-	APIProxy         *apiProxy
 	APICertAuth      string
 	APIClientCert    string
 	APIClientKey     string
@@ -90,7 +87,7 @@ var (
 )
 
 // Services implements the ServiceBackend interface.
-func (k *Kubernetes) Services(state request.Request, exact bool, opt plugin.Options) (svcs []msg.Service, err error) {
+func (k *Kubernetes) Services(ctx context.Context, state request.Request, exact bool, opt plugin.Options) (svcs []msg.Service, err error) {
 	// We're looking again at types, which we've already done in ServeDNS, but there are some types k8s just can't answer.
 	switch state.QType() {
 
@@ -111,19 +108,27 @@ func (k *Kubernetes) Services(state request.Request, exact bool, opt plugin.Opti
 	case dns.TypeNS:
 		// We can only get here if the qname equals the zone, see ServeDNS in handler.go.
 		ns := k.nsAddr()
-		svc := msg.Service{Host: ns.A.String(), Key: msg.Path(state.QName(), coredns)}
+		svc := msg.Service{Host: ns.A.String(), Key: msg.Path(state.QName(), coredns), TTL: k.ttl}
 		return []msg.Service{svc}, nil
 	}
 
-	if state.QType() == dns.TypeA && isDefaultNS(state.Name(), state.Zone) {
+	if isDefaultNS(state.Name(), state.Zone) {
+		ns := k.nsAddr()
+
+		isIPv4 := ns.A.To4() != nil
+
+		if !((state.QType() == dns.TypeA && isIPv4) || (state.QType() == dns.TypeAAAA && !isIPv4)) {
+			// NODATA
+			return nil, nil
+		}
+
 		// If this is an A request for "ns.dns", respond with a "fake" record for coredns.
 		// SOA records always use this hardcoded name
-		ns := k.nsAddr()
-		svc := msg.Service{Host: ns.A.String(), Key: msg.Path(state.QName(), coredns)}
+		svc := msg.Service{Host: ns.A.String(), Key: msg.Path(state.QName(), coredns), TTL: k.ttl}
 		return []msg.Service{svc}, nil
 	}
 
-	s, e := k.Records(state, false)
+	s, e := k.Records(ctx, state, false)
 
 	// SRV for external services is not yet implemented, so remove those records.
 
@@ -145,8 +150,8 @@ func (k *Kubernetes) Services(state request.Request, exact bool, opt plugin.Opti
 func (k *Kubernetes) primaryZone() string { return k.Zones[k.primaryZoneIndex] }
 
 // Lookup implements the ServiceBackend interface.
-func (k *Kubernetes) Lookup(state request.Request, name string, typ uint16) (*dns.Msg, error) {
-	return k.Upstream.Lookup(state, name, typ)
+func (k *Kubernetes) Lookup(ctx context.Context, state request.Request, name string, typ uint16) (*dns.Msg, error) {
+	return k.Upstream.Lookup(ctx, state, name, typ)
 }
 
 // IsNameError implements the ServiceBackend interface.
@@ -174,50 +179,8 @@ func (k *Kubernetes) getClientConfig() (*rest.Config, error) {
 	}
 
 	// Connect to API from out of cluster
-	endpoint := k.APIServerList[0]
-	if len(k.APIServerList) > 1 {
-		// Use a random port for api proxy, will get the value later through listener.Addr()
-		listener, err := net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			return nil, fmt.Errorf("failed to create kubernetes api proxy: %v", err)
-		}
-		k.APIProxy = &apiProxy{
-			listener: listener,
-			handler: proxyHandler{
-				HealthCheck: healthcheck.HealthCheck{
-					FailTimeout: 3 * time.Second,
-					MaxFails:    1,
-					Path:        "/",
-					Interval:    5 * time.Second,
-				},
-			},
-		}
-		k.APIProxy.handler.Hosts = make([]*healthcheck.UpstreamHost, len(k.APIServerList))
-		for i, entry := range k.APIServerList {
-
-			uh := &healthcheck.UpstreamHost{
-				Name: strings.TrimPrefix(entry, "http://"),
-
-				CheckDown: func(upstream *proxyHandler) healthcheck.UpstreamHostDownFunc {
-					return func(uh *healthcheck.UpstreamHost) bool {
-
-						fails := atomic.LoadInt32(&uh.Fails)
-						if fails >= upstream.MaxFails && upstream.MaxFails != 0 {
-							return true
-						}
-						return false
-					}
-				}(&k.APIProxy.handler),
-			}
-
-			k.APIProxy.handler.Hosts[i] = uh
-		}
-		k.APIProxy.Handler = &k.APIProxy.handler
-
-		// Find the random port used for api proxy
-		endpoint = fmt.Sprintf("http://%s", listener.Addr())
-	}
-	clusterinfo.Server = endpoint
+	// Only the first one is used. We will deprecated multiple endpoints later.
+	clusterinfo.Server = k.APIServerList[0]
 
 	if len(k.APICertAuth) > 0 {
 		clusterinfo.CertificateAuthority = k.APICertAuth
@@ -263,6 +226,15 @@ func (k *Kubernetes) InitKubeCache() (err error) {
 		k.opts.selector = selector
 	}
 
+	if k.opts.namespaceLabelSelector != nil {
+		var selector labels.Selector
+		selector, err = meta.LabelSelectorAsSelector(k.opts.namespaceLabelSelector)
+		if err != nil {
+			return fmt.Errorf("unable to create Selector for LabelSelector '%s': %q", k.opts.namespaceLabelSelector, err)
+		}
+		k.opts.namespaceSelector = selector
+	}
+
 	k.opts.initPodCache = k.podMode == podModeVerified
 
 	k.opts.zones = k.Zones
@@ -273,7 +245,7 @@ func (k *Kubernetes) InitKubeCache() (err error) {
 }
 
 // Records looks up services in kubernetes.
-func (k *Kubernetes) Records(state request.Request, exact bool) ([]msg.Service, error) {
+func (k *Kubernetes) Records(ctx context.Context, state request.Request, exact bool) ([]msg.Service, error) {
 	r, e := parseRequest(state)
 	if e != nil {
 		return nil, e
@@ -299,33 +271,6 @@ func (k *Kubernetes) Records(state request.Request, exact bool) ([]msg.Service, 
 	return services, err
 }
 
-// serviceFQDN returns the k8s cluster dns spec service FQDN for the service (or endpoint) object.
-func serviceFQDN(obj meta.Object, zone string) string {
-	return dnsutil.Join(obj.GetName(), obj.GetNamespace(), Svc, zone)
-}
-
-// podFQDN returns the k8s cluster dns spec FQDN for the pod.
-func podFQDN(p *object.Pod, zone string) string {
-	if strings.Contains(p.PodIP, ".") {
-		name := strings.Replace(p.PodIP, ".", "-", -1)
-		return dnsutil.Join(name, p.GetNamespace(), Pod, zone)
-	}
-
-	name := strings.Replace(p.PodIP, ":", "-", -1)
-	return dnsutil.Join(name, p.GetNamespace(), Pod, zone)
-}
-
-// endpointFQDN returns a list of k8s cluster dns spec service FQDNs for each subset in the endpoint.
-func endpointFQDN(ep *object.Endpoints, zone string, endpointNameMode bool) []string {
-	var names []string
-	for _, ss := range ep.Subsets {
-		for _, addr := range ss.Addresses {
-			names = append(names, dnsutil.Join(endpointHostname(addr, endpointNameMode), serviceFQDN(ep, zone)))
-		}
-	}
-	return names
-}
-
 func endpointHostname(addr object.EndpointAddress, endpointNameMode bool) string {
 	if addr.Hostname != "" {
 		return addr.Hostname
@@ -348,13 +293,15 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	}
 
 	namespace := r.namespace
+	if !wildcard(namespace) && !k.namespaceExposed(namespace) {
+		return nil, errNoItems
+	}
+
 	podname := r.service
-	zonePath := msg.Path(zone, coredns)
-	ip := ""
 
 	// handle empty pod name
 	if podname == "" {
-		if k.namespace(namespace) || wildcard(namespace) {
+		if k.namespaceExposed(namespace) || wildcard(namespace) {
 			// NODATA
 			return nil, nil
 		}
@@ -362,6 +309,8 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 		return nil, errNoItems
 	}
 
+	zonePath := msg.Path(zone, coredns)
+	ip := ""
 	if strings.Count(podname, "-") == 3 && !strings.Contains(podname, "--") {
 		ip = strings.Replace(podname, "-", ".", -1)
 	} else {
@@ -369,7 +318,7 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	}
 
 	if k.podMode == podModeInsecure {
-		if !wildcard(namespace) && !k.namespace(namespace) { // no wildcard, but namespace does not exist
+		if !wildcard(namespace) && !k.namespaceExposed(namespace) { // no wildcard, but namespace does not exist
 			return nil, errNoItems
 		}
 
@@ -384,8 +333,8 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	// PodModeVerified
 	err = errNoItems
 	if wildcard(podname) && !wildcard(namespace) {
-		// If namespace exist, err should be nil, so that we return nodata instead of NXDOMAIN
-		if k.namespace(namespace) {
+		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
+		if k.namespaceExposed(namespace) {
 			err = nil
 		}
 	}
@@ -393,11 +342,6 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	for _, p := range k.APIConn.PodIndex(ip) {
 		// If namespace has a wildcard, filter results against Corefile namespace list.
 		if wildcard(namespace) && !k.namespaceExposed(p.Namespace) {
-			continue
-		}
-
-		// exclude pods in the process of termination
-		if p.Deleting {
 			continue
 		}
 
@@ -414,12 +358,24 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 
 // findServices returns the services matching r from the cache.
 func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.Service, err error) {
-	zonePath := msg.Path(zone, coredns)
+	if !wildcard(r.namespace) && !k.namespaceExposed(r.namespace) {
+		return nil, errNoItems
+	}
+
+	// handle empty service name
+	if r.service == "" {
+		if k.namespaceExposed(r.namespace) || wildcard(r.namespace) {
+			// NODATA
+			return nil, nil
+		}
+		// NXDOMAIN
+		return nil, errNoItems
+	}
 
 	err = errNoItems
 	if wildcard(r.service) && !wildcard(r.namespace) {
-		// If namespace exist, err should be nil, so that we return nodata instead of NXDOMAIN
-		if k.namespace(r.namespace) {
+		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
+		if k.namespaceExposed(r.namespace) {
 			err = nil
 		}
 	}
@@ -430,16 +386,6 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 		serviceList       []*object.Service
 	)
 
-	// handle empty service name
-	if r.service == "" {
-		if k.namespace(r.namespace) || wildcard(r.namespace) {
-			// NODATA
-			return nil, nil
-		}
-		// NXDOMAIN
-		return nil, errNoItems
-	}
-
 	if wildcard(r.service) || wildcard(r.namespace) {
 		serviceList = k.APIConn.ServiceList()
 		endpointsListFunc = func() []*object.Endpoints { return k.APIConn.EndpointsList() }
@@ -449,18 +395,21 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 		endpointsListFunc = func() []*object.Endpoints { return k.APIConn.EpIndex(idx) }
 	}
 
+	zonePath := msg.Path(zone, coredns)
 	for _, svc := range serviceList {
 		if !(match(r.namespace, svc.Namespace) && match(r.service, svc.Name)) {
 			continue
 		}
 
-		// If namespace has a wildcard, filter results against Corefile namespace list.
+		// If request namespace is a wildcard, filter results against Corefile namespace list.
 		// (Namespaces without a wildcard were filtered before the call to this function.)
 		if wildcard(r.namespace) && !k.namespaceExposed(svc.Namespace) {
 			continue
 		}
 
-		if k.opts.ignoreEmptyService && svc.ClusterIP != api.ClusterIPNone {
+		// If "ignore empty_service" option is set and no endpoints exist, return NXDOMAIN unless
+		// it's a headless or externalName service (covered below).
+		if k.opts.ignoreEmptyService && svc.ClusterIP != api.ClusterIPNone && svc.Type != api.ServiceTypeExternalName {
 			// serve NXDOMAIN if no endpoint is able to answer
 			podsCount := 0
 			for _, ep := range endpointsListFunc() {

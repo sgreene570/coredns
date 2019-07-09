@@ -17,7 +17,6 @@ type cacheTestCase struct {
 	test.Case
 	in                 test.Case
 	AuthenticatedData  bool
-	Authoritative      bool
 	RecursionAvailable bool
 	Truncated          bool
 	shouldCache        bool
@@ -25,7 +24,7 @@ type cacheTestCase struct {
 
 var cacheTestCases = []cacheTestCase{
 	{
-		RecursionAvailable: true, AuthenticatedData: true, Authoritative: true,
+		RecursionAvailable: true, AuthenticatedData: true,
 		Case: test.Case{
 			Qname: "miek.nl.", Qtype: dns.TypeMX,
 			Answer: []dns.RR{
@@ -43,7 +42,7 @@ var cacheTestCases = []cacheTestCase{
 		shouldCache: true,
 	},
 	{
-		RecursionAvailable: true, AuthenticatedData: true, Authoritative: true,
+		RecursionAvailable: true, AuthenticatedData: true,
 		Case: test.Case{
 			Qname: "mIEK.nL.", Qtype: dns.TypeMX,
 			Answer: []dns.RR{
@@ -70,7 +69,7 @@ var cacheTestCases = []cacheTestCase{
 		shouldCache: false,
 	},
 	{
-		RecursionAvailable: true, Authoritative: true,
+		RecursionAvailable: true,
 		Case: test.Case{
 			Rcode: dns.RcodeNameError,
 			Qname: "example.org.", Qtype: dns.TypeA,
@@ -88,7 +87,35 @@ var cacheTestCases = []cacheTestCase{
 		shouldCache: true,
 	},
 	{
-		RecursionAvailable: true, Authoritative: true,
+		RecursionAvailable: true,
+		Case: test.Case{
+			Rcode: dns.RcodeServerFailure,
+			Qname: "example.org.", Qtype: dns.TypeA,
+			Ns: []dns.RR{},
+		},
+		in: test.Case{
+			Rcode: dns.RcodeServerFailure,
+			Qname: "example.org.", Qtype: dns.TypeA,
+			Ns: []dns.RR{},
+		},
+		shouldCache: true,
+	},
+	{
+		RecursionAvailable: true,
+		Case: test.Case{
+			Rcode: dns.RcodeNotImplemented,
+			Qname: "example.org.", Qtype: dns.TypeA,
+			Ns: []dns.RR{},
+		},
+		in: test.Case{
+			Rcode: dns.RcodeNotImplemented,
+			Qname: "example.org.", Qtype: dns.TypeA,
+			Ns: []dns.RR{},
+		},
+		shouldCache: true,
+	},
+	{
+		RecursionAvailable: true,
 		Case: test.Case{
 			Qname: "miek.nl.", Qtype: dns.TypeMX,
 			Do: true,
@@ -110,7 +137,7 @@ var cacheTestCases = []cacheTestCase{
 		shouldCache: false,
 	},
 	{
-		RecursionAvailable: true, Authoritative: true,
+		RecursionAvailable: true,
 		Case: test.Case{
 			Qname: "example.org.", Qtype: dns.TypeMX,
 			Do: true,
@@ -136,7 +163,7 @@ var cacheTestCases = []cacheTestCase{
 func cacheMsg(m *dns.Msg, tc cacheTestCase) *dns.Msg {
 	m.RecursionAvailable = tc.RecursionAvailable
 	m.AuthenticatedData = tc.AuthenticatedData
-	m.Authoritative = tc.Authoritative
+	m.Authoritative = true
 	m.Rcode = tc.Rcode
 	m.Truncated = tc.Truncated
 	m.Answer = tc.in.Answer
@@ -184,20 +211,19 @@ func TestCache(t *testing.T) {
 		if ok {
 			resp := i.toMsg(m, time.Now().UTC())
 
-			if !test.Header(t, tc.Case, resp) {
-				t.Logf("%v\n", resp)
+			if err := test.Header(tc.Case, resp); err != nil {
+				t.Error(err)
 				continue
 			}
 
-			if !test.Section(t, tc.Case, test.Answer, resp.Answer) {
-				t.Logf("%v\n", resp)
+			if err := test.Section(tc.Case, test.Answer, resp.Answer); err != nil {
+				t.Error(err)
 			}
-			if !test.Section(t, tc.Case, test.Ns, resp.Ns) {
-				t.Logf("%v\n", resp)
-
+			if err := test.Section(tc.Case, test.Ns, resp.Ns); err != nil {
+				t.Error(err)
 			}
-			if !test.Section(t, tc.Case, test.Extra, resp.Extra) {
-				t.Logf("%v\n", resp)
+			if err := test.Section(tc.Case, test.Extra, resp.Extra); err != nil {
+				t.Error(err)
 			}
 		}
 	}

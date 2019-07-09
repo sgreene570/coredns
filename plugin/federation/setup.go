@@ -9,7 +9,7 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 	"github.com/miekg/dns"
 
-	"github.com/mholt/caddy"
+	"github.com/caddyserver/caddy"
 )
 
 func init() {
@@ -47,6 +47,7 @@ func setup(c *caddy.Controller) error {
 
 func federationParse(c *caddy.Controller) (*Federation, error) {
 	fed := New()
+	fed.Upstream = upstream.New()
 
 	for c.Next() {
 		// federation [zones..]
@@ -64,12 +65,8 @@ func federationParse(c *caddy.Controller) (*Federation, error) {
 			x := c.Val()
 			switch x {
 			case "upstream":
-				args := c.RemainingArgs()
-				u, err := upstream.New(args)
-				if err != nil {
-					return nil, err
-				}
-				fed.Upstream = &u
+				// remove soon
+				c.RemainingArgs()
 			default:
 				args := c.RemainingArgs()
 				if x := len(args); x != 1 {

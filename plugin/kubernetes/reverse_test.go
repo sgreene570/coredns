@@ -6,7 +6,6 @@ import (
 
 	"github.com/coredns/coredns/plugin/kubernetes/object"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
-	"github.com/coredns/coredns/plugin/pkg/watch"
 	"github.com/coredns/coredns/plugin/test"
 
 	"github.com/miekg/dns"
@@ -24,9 +23,6 @@ func (APIConnReverseTest) EpIndex(string) []*object.Endpoints { return nil }
 func (APIConnReverseTest) EndpointsList() []*object.Endpoints { return nil }
 func (APIConnReverseTest) ServiceList() []*object.Service     { return nil }
 func (APIConnReverseTest) Modified() int64                    { return 0 }
-func (APIConnReverseTest) SetWatchChan(watch.Chan)            {}
-func (APIConnReverseTest) Watch(string) error                 { return nil }
-func (APIConnReverseTest) StopWatching(string)                {}
 
 func (APIConnReverseTest) SvcIndex(svc string) []*object.Service {
 	if svc != "svc1.testns" {
@@ -200,6 +196,8 @@ func TestReverse(t *testing.T) {
 		if resp == nil {
 			t.Fatalf("Test %d: got nil message and no error for: %s %d", i, r.Question[0].Name, r.Question[0].Qtype)
 		}
-		test.SortAndCheck(t, resp, tc)
+		if err := test.SortAndCheck(resp, tc); err != nil {
+			t.Error(err)
+		}
 	}
 }

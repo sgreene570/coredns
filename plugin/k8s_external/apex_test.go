@@ -13,7 +13,7 @@ import (
 
 func TestApex(t *testing.T) {
 	k := kubernetes.New([]string{"cluster.local."})
-	k.Namespaces = map[string]struct{}{"testns": struct{}{}}
+	k.Namespaces = map[string]struct{}{"testns": {}}
 	k.APIConn = &external{}
 
 	e := New()
@@ -40,7 +40,9 @@ func TestApex(t *testing.T) {
 		if resp == nil {
 			t.Fatalf("Test %d, got nil message and no error for %q", i, r.Question[0].Name)
 		}
-		test.SortAndCheck(t, resp, tc)
+		if err := test.SortAndCheck(resp, tc); err != nil {
+			t.Error(err)
+		}
 	}
 }
 

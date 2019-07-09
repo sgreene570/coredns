@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/pkg/rcode"
 	"github.com/coredns/coredns/plugin/test"
 	"github.com/coredns/coredns/request"
 
-	"github.com/mholt/caddy"
+	"github.com/caddyserver/caddy"
 	"github.com/miekg/dns"
 	"github.com/opentracing/opentracing-go/mocktracer"
 )
@@ -69,7 +68,7 @@ func TestTrace(t *testing.T) {
 				every:  1,
 				tracer: m,
 			}
-			ctx := context.WithValue(context.TODO(), plugin.ServerCtx{}, server)
+			ctx := context.TODO()
 			if _, err := tr.ServeDNS(ctx, w, tc.question); err != nil {
 				t.Fatalf("Error during tr.ServeDNS(ctx, w, %v): %v", tc.question, err)
 			}

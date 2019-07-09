@@ -19,6 +19,14 @@ var dnsEmptyServiceTestCases = []test.Case{
 			test.SOA("cluster.local.	5	IN	SOA	ns.dns.cluster.local. hostmaster.cluster.local. 1499347823 7200 1800 86400 5"),
 		},
 	},
+	// CNAME to external
+	{
+		Qname: "external.testns.svc.cluster.local.", Qtype: dns.TypeCNAME,
+		Rcode: dns.RcodeSuccess,
+		Answer: []dns.RR{
+			test.CNAME("external.testns.svc.cluster.local.	5	IN	CNAME	ext.interwebs.test."),
+		},
+	},
 }
 
 func TestServeDNSEmptyService(t *testing.T) {
@@ -49,8 +57,12 @@ func TestServeDNSEmptyService(t *testing.T) {
 		}
 
 		// Before sorting, make sure that CNAMES do not appear after their target records
-		test.CNAMEOrder(t, resp)
+		if err := test.CNAMEOrder(resp); err != nil {
+			t.Error(err)
+		}
 
-		test.SortAndCheck(t, resp, tc)
+		if err := test.SortAndCheck(resp, tc); err != nil {
+			t.Error(err)
+		}
 	}
 }

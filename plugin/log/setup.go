@@ -5,9 +5,10 @@ import (
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/pkg/replacer"
 	"github.com/coredns/coredns/plugin/pkg/response"
 
-	"github.com/mholt/caddy"
+	"github.com/caddyserver/caddy"
 	"github.com/miekg/dns"
 )
 
@@ -25,7 +26,7 @@ func setup(c *caddy.Controller) error {
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		return Logger{Next: next, Rules: rules, ErrorFunc: dnsserver.DefaultErrorFunc}
+		return Logger{Next: next, Rules: rules, repl: replacer.New()}
 	})
 
 	return nil
@@ -103,7 +104,7 @@ func logParse(c *caddy.Controller) ([]Rule, error) {
 			classes[response.All] = struct{}{}
 		}
 
-		for i := len(rules) - 1; i >= length; i -= 1 {
+		for i := len(rules) - 1; i >= length; i-- {
 			rules[i].Class = classes
 		}
 	}

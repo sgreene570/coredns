@@ -21,7 +21,8 @@ type (
 	// and/or error.
 	//
 	// If ServeDNS writes to the response body, it should return a status
-	// code. If the status code is not one of the following:
+	// code. CoreDNS assumes *no* reply has yet been written if the status
+	// code is one of the following:
 	//
 	// * SERVFAIL (dns.RcodeServerFailure)
 	//
@@ -31,9 +32,9 @@ type (
 	//
 	// * NOTIMP (dns.RcodeNotImplemented)
 	//
-	// CoreDNS assumes *no* reply has yet been written. All other response
-	// codes signal other handlers above it that the response message is
-	// already written, and that they should not write to it also.
+	// All other response codes signal other handlers above it that the
+	// response message is already written, and that they should not write
+	// to it also.
 	//
 	// If ServeDNS encounters an error, it should return the error value
 	// so it can be logged by designated error-handling plugin.
@@ -106,6 +107,3 @@ var TimeBuckets = prometheus.ExponentialBuckets(0.00025, 2, 16) // from 0.25ms t
 
 // ErrOnce is returned when a plugin doesn't support multiple setups per server.
 var ErrOnce = errors.New("this plugin can only be used once per Server Block")
-
-// ServerCtx is the context key to pass server address context to the plugins handling the request.
-type ServerCtx struct{}
