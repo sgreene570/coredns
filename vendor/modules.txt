@@ -1,8 +1,8 @@
 # cloud.google.com/go v0.40.0
 cloud.google.com/go/compute/metadata
-# github.com/DataDog/zstd v1.3.5
+# github.com/DataDog/zstd v1.3.6-0.20190409195224-796139022798
 github.com/DataDog/zstd
-# github.com/Shopify/sarama v1.21.0
+# github.com/Shopify/sarama v1.23.0
 github.com/Shopify/sarama
 # github.com/apache/thrift v0.12.0
 github.com/apache/thrift/lib/go/thrift
@@ -48,6 +48,8 @@ github.com/caddyserver/caddy/caddyfile
 github.com/caddyserver/caddy/onevent
 github.com/caddyserver/caddy/telemetry
 github.com/caddyserver/caddy/onevent/hook
+# github.com/celebdor/zeroconf v0.0.0-20190404095836-c328d57fca11
+github.com/celebdor/zeroconf
 # github.com/cenkalti/backoff v2.1.1+incompatible
 github.com/cenkalti/backoff
 # github.com/coreos/etcd v3.3.13+incompatible
@@ -67,7 +69,7 @@ github.com/eapache/go-resiliency/breaker
 github.com/eapache/go-xerial-snappy
 # github.com/eapache/queue v1.1.0
 github.com/eapache/queue
-# github.com/evanphx/json-patch v4.1.0+incompatible
+# github.com/evanphx/json-patch v4.5.0+incompatible
 github.com/evanphx/json-patch
 # github.com/farsightsec/golang-framestream v0.0.0-20181102145529-8a0cb8ba8710
 github.com/farsightsec/golang-framestream
@@ -103,17 +105,17 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+# github.com/golang/snappy v0.0.1
 github.com/golang/snappy
-# github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
+# github.com/google/gofuzz v1.0.0
 github.com/google/gofuzz
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
-# github.com/googleapis/gnostic v0.2.0
+# github.com/googleapis/gnostic v0.3.0
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
-# github.com/gophercloud/gophercloud v0.0.0-20190307220656-fe1ba5ce12dd
+# github.com/gophercloud/gophercloud v0.2.0
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/openstack
 github.com/gophercloud/gophercloud/openstack/identity/v2/tokens
@@ -123,11 +125,16 @@ github.com/gophercloud/gophercloud/openstack/identity/v2/tenants
 github.com/gophercloud/gophercloud/pagination
 # github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645
 github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc
+# github.com/hashicorp/go-uuid v1.0.1
+github.com/hashicorp/go-uuid
 # github.com/hashicorp/golang-lru v0.5.1
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/imdario/mergo v0.3.7
 github.com/imdario/mergo
+# github.com/jcmturner/gofork v0.0.0-20190328161633-dc7c13fece03
+github.com/jcmturner/gofork/encoding/asn1
+github.com/jcmturner/gofork/x/crypto/pbkdf2
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
 # github.com/json-iterator/go v1.1.6
@@ -146,6 +153,8 @@ github.com/miekg/dns
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
+# github.com/openshift/coredns-mdns v0.0.0-20190710141149-66c708637267
+github.com/openshift/coredns-mdns
 # github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492
 github.com/opentracing-contrib/go-observer
 # github.com/opentracing/opentracing-go v1.1.0
@@ -166,6 +175,8 @@ github.com/philhofer/fwd
 # github.com/pierrec/lz4 v2.0.5+incompatible
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
 # github.com/prometheus/client_golang v1.0.0
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/promhttp
@@ -190,6 +201,7 @@ golang.org/x/crypto/ed25519
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 # golang.org/x/net v0.0.0-20190619014844-b5b0513f8c1b
 golang.org/x/net/context
@@ -204,7 +216,9 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/http2/hpack
 golang.org/x/net/http/httpguts
 golang.org/x/net/idna
+golang.org/x/net/proxy
 golang.org/x/net/context/ctxhttp
+golang.org/x/net/internal/socks
 # golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 golang.org/x/oauth2
 golang.org/x/oauth2/google
@@ -279,6 +293,44 @@ gopkg.in/DataDog/dd-trace-go.v1/internal/log
 gopkg.in/DataDog/dd-trace-go.v1/internal/version
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
+# gopkg.in/jcmturner/aescts.v1 v1.0.1
+gopkg.in/jcmturner/aescts.v1
+# gopkg.in/jcmturner/dnsutils.v1 v1.0.1
+gopkg.in/jcmturner/dnsutils.v1
+# gopkg.in/jcmturner/gokrb5.v7 v7.2.3
+gopkg.in/jcmturner/gokrb5.v7/asn1tools
+gopkg.in/jcmturner/gokrb5.v7/client
+gopkg.in/jcmturner/gokrb5.v7/config
+gopkg.in/jcmturner/gokrb5.v7/credentials
+gopkg.in/jcmturner/gokrb5.v7/gssapi
+gopkg.in/jcmturner/gokrb5.v7/iana/chksumtype
+gopkg.in/jcmturner/gokrb5.v7/iana/keyusage
+gopkg.in/jcmturner/gokrb5.v7/keytab
+gopkg.in/jcmturner/gokrb5.v7/messages
+gopkg.in/jcmturner/gokrb5.v7/types
+gopkg.in/jcmturner/gokrb5.v7/crypto
+gopkg.in/jcmturner/gokrb5.v7/crypto/etype
+gopkg.in/jcmturner/gokrb5.v7/iana/errorcode
+gopkg.in/jcmturner/gokrb5.v7/iana/flags
+gopkg.in/jcmturner/gokrb5.v7/iana/nametype
+gopkg.in/jcmturner/gokrb5.v7/iana/patype
+gopkg.in/jcmturner/gokrb5.v7/kadmin
+gopkg.in/jcmturner/gokrb5.v7/krberror
+gopkg.in/jcmturner/gokrb5.v7/iana/etypeID
+gopkg.in/jcmturner/gokrb5.v7/iana
+gopkg.in/jcmturner/gokrb5.v7/iana/adtype
+gopkg.in/jcmturner/gokrb5.v7/iana/asnAppTag
+gopkg.in/jcmturner/gokrb5.v7/iana/msgtype
+gopkg.in/jcmturner/gokrb5.v7/pac
+gopkg.in/jcmturner/gokrb5.v7/iana/addrtype
+gopkg.in/jcmturner/gokrb5.v7/crypto/common
+gopkg.in/jcmturner/gokrb5.v7/crypto/rfc3961
+gopkg.in/jcmturner/gokrb5.v7/crypto/rfc3962
+gopkg.in/jcmturner/gokrb5.v7/crypto/rfc4757
+gopkg.in/jcmturner/gokrb5.v7/crypto/rfc8009
+# gopkg.in/jcmturner/rpc.v1 v1.1.0
+gopkg.in/jcmturner/rpc.v1/mstypes
+gopkg.in/jcmturner/rpc.v1/ndr
 # gopkg.in/square/go-jose.v2 v2.2.2
 gopkg.in/square/go-jose.v2
 gopkg.in/square/go-jose.v2/cipher
@@ -474,9 +526,9 @@ k8s.io/client-go/kubernetes/typed/storage/v1beta1/fake
 k8s.io/client-go/testing
 # k8s.io/klog v0.3.3
 k8s.io/klog
-# k8s.io/kube-openapi v0.0.0-20190306001800-15615b16d372
+# k8s.io/kube-openapi v0.0.0-20190709113604-33be087ad058
 k8s.io/kube-openapi/pkg/util/proto
-# k8s.io/utils v0.0.0-20190529001817-6999998975a7
+# k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/integer
