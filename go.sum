@@ -313,6 +313,8 @@ github.com/openshift/coredns-mdns v0.0.0-20200122115902-259b209eea6a h1:twcIn3o9
 github.com/openshift/coredns-mdns v0.0.0-20200122115902-259b209eea6a/go.mod h1:BLITL6gPQ/ou0UMHoA3YvFdAoh2UsV/YNgA7Sx9DMz4=
 github.com/openshift/coredns-mdns v0.0.0-20200220182154-b0f03279ed06 h1:PQ4ATq5VDIBB/tdoBiZiZqXSUHETUDjR4Eq5qB+aFfY=
 github.com/openshift/coredns-mdns v0.0.0-20200220182154-b0f03279ed06/go.mod h1:BLITL6gPQ/ou0UMHoA3YvFdAoh2UsV/YNgA7Sx9DMz4=
+github.com/openshift/coredns-mdns v0.0.0-20200302154045-ff66ed9a4619 h1:ivr7CJlVLQl3cDJiXAqJmNM2Lmt/WsBwLtoGnThp0OM=
+github.com/openshift/coredns-mdns v0.0.0-20200302154045-ff66ed9a4619/go.mod h1:BLITL6gPQ/ou0UMHoA3YvFdAoh2UsV/YNgA7Sx9DMz4=
 github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 h1:lM6RxxfUMrYL/f8bWEUqdXrANWtrL7Nndbm9iFN0DlU=
 github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492/go.mod h1:Ngi6UdF0k5OKD5t5wlmGhe/EDKPoUM3BXZSSfIuJbis=
 github.com/opentracing/opentracing-go v1.1.0 h1:pWlfV3Bxv7k65HYwkikxat0+s3pV4bsqf19k25Ur8rU=
