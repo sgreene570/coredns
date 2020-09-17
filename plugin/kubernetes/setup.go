@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -45,7 +46,7 @@ func setup(c *caddy.Controller) error {
 		return plugin.Error("kubernetes", err)
 	}
 
-	err = k.InitKubeCache()
+	err = k.InitKubeCache(context.Background())
 	if err != nil {
 		return plugin.Error("kubernetes", err)
 	}
