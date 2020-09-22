@@ -31,8 +31,6 @@ func parseRequest(state request.Request) (r recordRequest, err error) {
 	// 1. _port._protocol.service.namespace.pod|svc.zone
 	// 2. (endpoint): endpoint.service.namespace.pod|svc.zone
 	// 3. (service): service.namespace.pod|svc.zone
-	//
-	// Federations are handled in the federation plugin. And aren't parsed here.
 
 	base, _ := dnsutil.TrimZone(state.Name(), state.Zone)
 	// return NODATA for apex queries
