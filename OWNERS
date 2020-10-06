@@ -7,6 +7,8 @@ approvers:
   - frobware
   - sgreene570
 
+component: DNS
+
 features:
   - comments
   - reviewers
