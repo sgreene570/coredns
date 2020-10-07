@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/Azure/azure-sdk-for-go v32.6.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.9.6
+	github.com/Azure/go-autorest/autorest v0.11.9
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.1
 	github.com/aws/aws-sdk-go v1.25.48
 	github.com/caddyserver/caddy v1.0.4
@@ -22,7 +22,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4
 	github.com/prometheus/common v0.7.0
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200306183522-221f0cc107cb
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
 	google.golang.org/api v0.15.0
 	google.golang.org/grpc v1.27.0
@@ -33,7 +33,4 @@ require (
 	k8s.io/klog v0.4.0
 )
 
-replace (
-	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.0.0+incompatible
-	github.com/miekg/dns v1.1.3 => github.com/miekg/dns v1.1.22
-)
+replace github.com/miekg/dns v1.1.3 => github.com/miekg/dns v1.1.22
