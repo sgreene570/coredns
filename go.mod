@@ -1,6 +1,6 @@
 module github.com/coredns/coredns
 
-go 1.12
+go 1.15
 
 require (
 	github.com/Azure/azure-sdk-for-go v32.6.0+incompatible
@@ -10,7 +10,7 @@ require (
 	github.com/caddyserver/caddy v1.0.4
 	github.com/dnstap/golang-dnstap v0.0.0-20170829151710-2cf77a2b5e11
 	github.com/farsightsec/golang-framestream v0.0.0-20181102145529-8a0cb8ba8710
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645
 	github.com/infobloxopen/go-trees v0.0.0-20190313150506-2af4e13f9062
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
@@ -23,13 +23,13 @@ require (
 	github.com/prometheus/common v0.7.0
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200306183522-221f0cc107cb
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
-	google.golang.org/api v0.15.0
-	google.golang.org/grpc v1.27.0
+	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
+	google.golang.org/api v0.20.0
+	google.golang.org/grpc v1.27.1
 	gopkg.in/DataDog/dd-trace-go.v1 v1.19.0
-	k8s.io/api v0.19.2
-	k8s.io/apimachinery v0.19.2
-	k8s.io/client-go v0.19.2
+	k8s.io/api v0.20.0
+	k8s.io/apimachinery v0.20.0
+	k8s.io/client-go v0.20.0
 	k8s.io/klog v0.4.0
 )
 
