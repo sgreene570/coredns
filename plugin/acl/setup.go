@@ -4,16 +4,17 @@ import (
 	"net"
 	"strings"
 
+	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
-	"github.com/coredns/coredns/plugin/metrics"
 
-	"github.com/caddyserver/caddy"
 	"github.com/infobloxopen/go-trees/iptree"
 	"github.com/miekg/dns"
 )
 
-func init() { plugin.Register("acl", setup) }
+const pluginName = "acl"
+
+func init() { plugin.Register(pluginName, setup) }
 
 func newDefaultFilter() *iptree.Tree {
 	defaultFilter := iptree.NewTree()
@@ -27,7 +28,7 @@ func newDefaultFilter() *iptree.Tree {
 func setup(c *caddy.Controller) error {
 	a, err := parse(c)
 	if err != nil {
-		return plugin.Error("acl", err)
+		return plugin.Error(pluginName, err)
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
@@ -35,11 +36,6 @@ func setup(c *caddy.Controller) error {
 		return a
 	})
 
-	// Register all metrics.
-	c.OnStartup(func() error {
-		metrics.MustRegister(c, RequestBlockCount, RequestAllowCount)
-		return nil
-	})
 	return nil
 }
 
