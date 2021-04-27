@@ -128,6 +128,9 @@ func EndpointSliceToEndpoints(obj meta.Object) (meta.Object, error) {
 	}
 
 	for _, end := range ends.Endpoints {
+		if end.Conditions.Ready == nil || !*end.Conditions.Ready {
+			continue
+		}
 		for _, a := range end.Addresses {
 			ea := EndpointAddress{IP: a}
 			if end.Hostname != nil {
